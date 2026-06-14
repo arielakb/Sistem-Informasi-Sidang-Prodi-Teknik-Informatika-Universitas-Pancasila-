@@ -1,0 +1,42 @@
+[
+  {
+    "nim": "20210001",
+    "nama": "Ahmad Fauzi",
+    "prodi": "Teknik Informatika",
+    "angkatan": 2021,
+    "email": "ahmad.fauzi@student.univpancasila.ac.id",
+    "status": "AKTIF"
+  },
+  {
+    "nim": "20210002",
+    "nama": "Budi Santoso",
+    "prodi": "Teknik Informatika",
+    "angkatan": 2021,
+    "email": "budi.santoso@student.univpancasila.ac.id",
+    "status": "AKTIF"
+  },
+  {
+    "nim": "20210003",
+    "nama": "Citra Lestari",
+    "prodi": "Sistem Informasi",
+    "angkatan": 2021,
+    "email": "citra.lestari@student.univpancasila.ac.id",
+    "status": "AKTIF"
+  },
+  {
+    "nim": "20210004",
+    "nama": "Dewi Anggraini",
+    "prodi": "Teknik Informatika",
+    "angkatan": 2021,
+    "email": "dewi.anggraini@student.univpancasila.ac.id",
+    "status": "AKTIF"
+  },
+  {
+    "nim": "20210005",
+    "nama": "Eko Prasetyo",
+    "prodi": "Sistem Informasi",
+    "angkatan": 2021,
+    "email": "eko.prasetyo@student.univpancasila.ac.id",
+    "status": "AKTIF"
+  }
+]

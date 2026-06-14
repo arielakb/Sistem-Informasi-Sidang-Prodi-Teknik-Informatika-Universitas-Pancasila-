@@ -1,0 +1,6 @@
+export enum StatusBerkas {
+  DIAJUKAN = 'DIAJUKAN',
+  DIVERIFIKASI = 'DIVERIFIKASI',
+  DITOLAK = 'DITOLAK',
+  DISETUJUI = 'DISETUJUI',
+}

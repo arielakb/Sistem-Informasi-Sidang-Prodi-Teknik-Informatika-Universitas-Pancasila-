@@ -1,0 +1,37 @@
+[
+  {
+    "nidn": "001002003",
+    "nama": "Prof. Dr. Hadi Wijaya",
+    "prodi": "Teknik Informatika",
+    "email": "hadi.wijaya@univpancasila.ac.id",
+    "jabatan": "Profesor"
+  },
+  {
+    "nidn": "001002004",
+    "nama": "Dr. Siti Aminah",
+    "prodi": "Teknik Informatika",
+    "email": "siti.aminah@univpancasila.ac.id",
+    "jabatan": "Lektor Kepala"
+  },
+  {
+    "nidn": "001002005",
+    "nama": "Dr. Bambang Kusumo",
+    "prodi": "Sistem Informasi",
+    "email": "bambang.kusumo@univpancasila.ac.id",
+    "jabatan": "Lektor"
+  },
+  {
+    "nidn": "001002006",
+    "nama": "Ir. Rina Susanti",
+    "prodi": "Teknik Informatika",
+    "email": "rina.susanti@univpancasila.ac.id",
+    "jabatan": "Asisten Ahli"
+  },
+  {
+    "nidn": "001002007",
+    "nama": "Dr. Agus Salim",
+    "prodi": "Sistem Informasi",
+    "email": "agus.salim@univpancasila.ac.id",
+    "jabatan": "Lektor Kepala"
+  }
+]

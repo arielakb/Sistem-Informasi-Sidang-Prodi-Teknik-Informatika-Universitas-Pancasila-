@@ -1,0 +1,339 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== ENUMS ==============
+enum Role {
+  ADMIN
+  ADMIN_AKADEMIK
+  SEKRETARIAT
+  KAPRODI
+  DOSEN_REGULER
+  DOSEN_PEMBIMBING
+  DOSEN_PENGUJI
+  STAF_PRODI
+  MAHASISWA
+  PUBLIC
+}
+
+enum StatusSkripsi {
+  PENGAJUAN_TOPIK
+  BIMBINGAN
+  SEMINAR_PROPOSAL
+  SIDANG_KOMPREHENSIF
+  SIDANG_SKRIPSI
+  REVISI
+  LULUS
+  DITOLAK
+}
+
+enum JenisSidang {
+  SEMINAR_PROPOSAL
+  SIDANG_KOMPREHENSIF
+  SIDANG_SKRIPSI
+}
+
+enum StatusJadwal {
+  DIJADWALKAN
+  BERLANGSUNG
+  SELESAI
+  DIBATALKAN
+}
+
+enum StatusBerkas {
+  DIAJUKAN
+  DIVERIFIKASI
+  DITOLAK
+  DISETUJUI
+}
+
+enum StatusLogbook {
+  MENUNGGU
+  DIVALIDASI
+  DITOLAK
+}
+
+// ============== CORE ENTITIES ==============
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  mahasiswa    Mahasiswa?
+  dosen        Dosen?
+  adminProfile AdminProfile?
+
+  @@map("users")
+}
+
+model Mahasiswa {
+  id             String        @id @default(uuid())
+  userId         String        @unique @map("user_id")
+  nim            String        @unique
+  nama           String
+  prodiId        String        @map("prodi_id")
+  angkatan       Int
+  pembimbing1Id  String?       @map("pembimbing_1_id")
+  pembimbing2Id  String?       @map("pembimbing_2_id")
+  judulSkripsi   String?       @map("judul_skripsi")
+  statusSkripsi  StatusSkripsi @default(PENGAJUAN_TOPIK) @map("status_skripsi")
+  topikDiajukan  String?       @map("topik_diajukan")
+  kodeEtikSigned Boolean       @default(false) @map("kode_etik_signed")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prodi       Prodi  @relation(fields: [prodiId], references: [id])
+  pembimbing1 Dosen? @relation("Pembimbing1", fields: [pembimbing1Id], references: [id])
+  pembimbing2 Dosen? @relation("Pembimbing2", fields: [pembimbing2Id], references: [id])
+
+  logbooks      Logbook[]
+  jadwalSidang  JadwalSidang[]
+  berkasSidang  BerkasSidang[]
+  berkasFinal   BerkasFinal[]
+  peminjamanLab PeminjamanLab[]
+  penilaian     Penilaian[]
+
+  @@map("mahasiswa")
+}
+
+model Dosen {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  nidn           String   @unique
+  nama           String
+  prodiId        String   @map("prodi_id")
+  jabatan        String?
+  bidangKeahlian String?  @map("bidang_keahlian")
+  isPembimbing   Boolean  @default(false) @map("is_pembimbing")
+  isPenguji      Boolean  @default(false) @map("is_penguji")
+  isKoordinator  Boolean  @default(false) @map("is_koordinator")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prodi Prodi @relation(fields: [prodiId], references: [id])
+
+  mahasiswaBimbingan1   Mahasiswa[]    @relation("Pembimbing1")
+  mahasiswaBimbingan2   Mahasiswa[]    @relation("Pembimbing2")
+  logbooks              Logbook[]
+  jadwalSebagaiPenguji1 JadwalSidang[] @relation("Penguji1Jadwal")
+  jadwalSebagaiPenguji2 JadwalSidang[] @relation("Penguji2Jadwal")
+  jadwalSebagaiPenguji3 JadwalSidang[] @relation("Penguji3Jadwal")
+  penilaian             Penilaian[]
+
+  @@map("dosen")
+}
+
+model Prodi {
+  id        String   @id @default(uuid())
+  kode      String   @unique
+  nama      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  mahasiswa  Mahasiswa[]
+  dosen      Dosen[]
+  ruangan    Ruangan[]
+  pengumuman Pengumuman[]
+
+  @@map("prodi")
+}
+
+model AdminProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  nama      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+// ============== SKRIPSI & BIMBINGAN ==============
+model Logbook {
+  id             String        @id @default(uuid())
+  mahasiswaId    String        @map("mahasiswa_id")
+  dosenId        String        @map("dosen_id")
+  tanggal        DateTime
+  topikBahasan   String        @map("topik_bahasan")
+  hasilBimbingan String?       @map("hasil_bimbingan")
+  status         StatusLogbook @default(MENUNGGU)
+  catatanDosen   String?       @map("catatan_dosen")
+  fileBukti      String?       @map("file_bukti")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+  dosen     Dosen     @relation(fields: [dosenId], references: [id])
+
+  @@map("logbooks")
+}
+
+// ============== JADWAL SIDANG ==============
+model Ruangan {
+  id        String   @id @default(uuid())
+  prodiId   String   @map("prodi_id")
+  nama      String
+  kapasitas Int
+  fasilitas String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  prodi         Prodi           @relation(fields: [prodiId], references: [id])
+  jadwal        JadwalSidang[]
+  PeminjamanLab PeminjamanLab[]
+
+  @@map("ruangan")
+}
+
+model JadwalSidang {
+  id           String       @id @default(uuid())
+  jenisSidang  JenisSidang  @map("jenis_sidang")
+  mahasiswaId  String       @map("mahasiswa_id")
+  tanggal      DateTime
+  waktuMulai   DateTime     @map("waktu_mulai")
+  waktuSelesai DateTime     @map("waktu_selesai")
+  ruanganId    String       @map("ruangan_id")
+  penguji1Id   String?      @map("penguji_1_id")
+  penguji2Id   String?      @map("penguji_2_id")
+  penguji3Id   String?      @map("penguji_3_id")
+  status       StatusJadwal @default(DIJADWALKAN)
+  linkMeeting  String?      @map("link_meeting")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+  ruangan   Ruangan   @relation(fields: [ruanganId], references: [id])
+  penguji1  Dosen?    @relation("Penguji1Jadwal", fields: [penguji1Id], references: [id])
+  penguji2  Dosen?    @relation("Penguji2Jadwal", fields: [penguji2Id], references: [id])
+  penguji3  Dosen?    @relation("Penguji3Jadwal", fields: [penguji3Id], references: [id])
+
+  berkasSidang BerkasSidang[]
+  penilaian    Penilaian[]
+  dokumenAdmin DokumenAdmin[]
+
+  @@map("jadwal_sidang")
+}
+
+// ============== BERKAS ==============
+model BerkasSidang {
+  id                String       @id @default(uuid())
+  mahasiswaId       String       @map("mahasiswa_id")
+  jadwalSidangId    String?      @map("jadwal_sidang_id")
+  jenisBerkas       String       @map("jenis_berkas")
+  filePath          String       @map("file_path")
+  status            StatusBerkas @default(DIAJUKAN)
+  catatanVerifikasi String?      @map("catatan_verifikasi")
+  uploadedAt        DateTime     @default(now()) @map("uploaded_at")
+
+  mahasiswa    Mahasiswa     @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+  jadwalSidang JadwalSidang? @relation(fields: [jadwalSidangId], references: [id])
+
+  @@map("berkas_sidang")
+}
+
+model BerkasFinal {
+  id                String       @id @default(uuid())
+  mahasiswaId       String       @map("mahasiswa_id")
+  fileNaskah        String       @map("file_naskah")
+  filePengesahan    String       @map("file_pengesahan")
+  fileBerkasLain    String?      @map("file_berkas_lain")
+  statusPembimbing  StatusBerkas @default(DIAJUKAN) @map("status_pembimbing")
+  statusKoordinator StatusBerkas @default(DIAJUKAN) @map("status_koordinator")
+  uploadedAt        DateTime     @default(now()) @map("uploaded_at")
+
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+
+  @@map("berkas_final")
+}
+
+// ============== PENILAIAN ==============
+model Penilaian {
+  id              String   @id @default(uuid())
+  jadwalSidangId  String   @map("jadwal_sidang_id")
+  dosenId         String   @map("dosen_id")
+  mahasiswaId     String   @map("mahasiswa_id")
+  nilaiPresentasi Decimal? @map("nilai_presentasi")
+  nilaiMateri     Decimal? @map("nilai_materi")
+  nilaiTeknik     Decimal? @map("nilai_teknik")
+  catatan         String?
+  totalNilai      Decimal? @map("total_nilai")
+  isSubmitted     Boolean  @default(false) @map("is_submitted")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  jadwalSidang JadwalSidang @relation(fields: [jadwalSidangId], references: [id], onDelete: Cascade)
+  dosen        Dosen        @relation(fields: [dosenId], references: [id])
+  mahasiswa    Mahasiswa    @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+
+  @@map("penilaian")
+}
+
+// ============== PEMINJAMAN LAB ==============
+model PeminjamanLab {
+  id            String   @id @default(uuid())
+  mahasiswaId   String   @map("mahasiswa_id")
+  ruanganId     String   @map("ruangan_id")
+  tanggalPinjam DateTime @map("tanggal_pinjam")
+  waktuMulai    DateTime @map("waktu_mulai")
+  waktuSelesai  DateTime @map("waktu_selesai")
+  keperluan     String
+  status        String   @default("MENUNGGU")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+  ruangan   Ruangan   @relation(fields: [ruanganId], references: [id])
+
+  @@map("peminjaman_lab")
+}
+
+// ============== DOKUMEN ADMIN ==============
+model DokumenAdmin {
+  id             String   @id @default(uuid())
+  jadwalSidangId String   @map("jadwal_sidang_id")
+  jenisDokumen   String   @map("jenis_dokumen")
+  filePath       String   @map("file_path")
+  generatedBy    String   @map("generated_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  jadwalSidang JadwalSidang @relation(fields: [jadwalSidangId], references: [id], onDelete: Cascade)
+
+  @@map("dokumen_admin")
+}
+
+// ============== PENGUMUMAN ==============
+model Pengumuman {
+  id         String   @id @default(uuid())
+  prodiId    String   @map("prodi_id")
+  judul      String
+  konten     String
+  targetRole Role?    @map("target_role")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  prodi Prodi @relation(fields: [prodiId], references: [id])
+
+  @@map("pengumuman")
+}
+
+// ============== DEADLINE ==============
+model Deadline {
+  id              String   @id @default(uuid())
+  jenisDeadline   String   @map("jenis_deadline")
+  tanggalDeadline DateTime @map("tanggal_deadline")
+  prodiId         String?  @map("prodi_id")
+  keterangan      String?
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("deadline")
+}

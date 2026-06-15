@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "description": "Sistem Administrasi Skripsi Universitas Pancasila",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
+
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

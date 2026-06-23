@@ -22,9 +22,10 @@ api.interceptors.response.use(
       
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        const response = await axios.post('/auth/refresh', { refreshToken });
+        const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api/v1';
+        const response = await axios.post(`${baseURL}/auth/refresh`, { refreshToken });
         
-        const { accessToken } = response.data;
+        const { accessToken } = response.data.data;
         localStorage.setItem('accessToken', accessToken);
         
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;

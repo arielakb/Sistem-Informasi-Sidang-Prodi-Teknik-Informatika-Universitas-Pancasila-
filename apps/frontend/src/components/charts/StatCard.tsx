@@ -16,6 +16,7 @@ export default function StatCard({ title, value, subtitle, icon, trend, trendUp,
     green: 'bg-green-50 text-green-600',
     yellow: 'bg-yellow-50 text-yellow-600',
     red: 'bg-red-50 text-red-600',
+    
   };
 
   return (

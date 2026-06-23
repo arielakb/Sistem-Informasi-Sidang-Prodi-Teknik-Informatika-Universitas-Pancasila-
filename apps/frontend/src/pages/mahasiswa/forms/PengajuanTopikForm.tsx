@@ -30,7 +30,6 @@ const validateTopik = (values: TopikFormValues) => {
 };
 
 export default function PengajuanTopikForm() {
-  const [showModal, setShowModal] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const pengajuanTopik = usePengajuanTopik();

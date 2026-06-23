@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 
 export interface EmailOptions {
@@ -19,17 +20,28 @@ export interface EmailResult {
  */
 export class EmailService {
   private isEnabled: boolean;
+  private transporter?: any;
 
   constructor() {
     this.isEnabled = !!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
 
-    if (!this.isEnabled) {
+    if (this.isEnabled) {
+      this.transporter = nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT || 587,
+        secure: env.SMTP_SECURE === 'true',
+        auth: {
+          user: env.SMTP_USER,
+          pass: env.SMTP_PASS,
+        },
+      });
+    } else {
       console.log('📧 EmailService: SMTP not configured — running in stub/log mode');
     }
   }
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
-    if (!this.isEnabled) {
+    if (!this.isEnabled || !this.transporter) {
       // Stub mode: log saja
       console.log('📧 [EMAIL STUB] Would send email:', {
         to: options.to,
@@ -39,11 +51,21 @@ export class EmailService {
       return { success: true, message: 'Email logged (stub mode)', messageId: `stub-${Date.now()}` };
     }
 
-    // TODO: Implementasi nyata dengan nodemailer saat SMTP tersedia
-    // const transporter = nodemailer.createTransporter({ ... })
-    // const info = await transporter.sendMail({ ... })
-    console.log('📧 EmailService: Real SMTP configured but nodemailer not yet installed');
-    return { success: true, message: 'Email queued' };
+    try {
+      const info = await this.transporter.sendMail({
+        from: env.SMTP_FROM || 'noreply@pancasila.ac.id',
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+      });
+
+      console.log('✅ Email sent successfully:', info.messageId);
+      return { success: true, message: 'Email sent successfully', messageId: info.messageId };
+    } catch (err) {
+      console.error('❌ Email send failed:', err);
+      return { success: false, message: `Email send failed: ${err instanceof Error ? err.message : String(err)}` };
+    }
   }
 
   async sendWelcomeEmail(to: string, nama: string): Promise<EmailResult> {
@@ -101,6 +123,50 @@ export class EmailService {
         <p>Harap mempersiapkan diri dengan baik. Semangat!</p>
       `,
     });
+  }
+
+  async sendDokumenApprovalEmail(
+    to: string,
+    namaMahasiswa: string,
+    dokumenTipe: string,
+    status: string,
+    catatan?: string
+  ): Promise<EmailResult> {
+    const statusText = status === 'DISETUJUI' ? 'disetujui' : 'ditolak';
+    return this.sendEmail({
+      to,
+      subject: `Dokumen ${dokumenTipe} ${statusText}`,
+      html: `
+        <h2>Update Status Dokumen</h2>
+        <p>Halo ${namaMahasiswa},</p>
+        <p>Dokumen <strong>${dokumenTipe}</strong> Anda telah <strong>${statusText}</strong>.</p>
+        ${catatan ? `<p><strong>Catatan:</strong><br>${catatan}</p>` : ''}
+        <p>Silakan login ke sistem untuk informasi lebih lanjut.</p>
+      `,
+    });
+  }
+
+  async sendBulkEmail(recipients: string[], subject: string, html: string): Promise<EmailResult> {
+    return this.sendEmail({
+      to: recipients,
+      subject,
+      html,
+    });
+  }
+
+  async verifyConnection(): Promise<boolean> {
+    if (!this.transporter) {
+      return false;
+    }
+
+    try {
+      await this.transporter.verify();
+      console.log('✅ SMTP connection verified');
+      return true;
+    } catch (err) {
+      console.error('❌ SMTP connection failed:', err);
+      return false;
+    }
   }
 }
 

@@ -11,6 +11,8 @@ import { KodeEtikUseCase } from '../../../application/use-cases/mahasiswa/KodeEt
 import { GetJadwalSidangUseCase } from '../../../application/use-cases/mahasiswa/GetJadwalSidangUseCase';
 import { IMahasiswaRepository } from '../../../domain/interfaces/IRepository';
 import { prisma } from '../../config/database';
+import FileService from '../../external-services/FileService';
+import * as fs from 'fs';
 
 export class MahasiswaController extends BaseController {
   constructor(
@@ -62,24 +64,51 @@ export class MahasiswaController extends BaseController {
 
   createLogbook = async (req: Request, res: Response, next: NextFunction) => {
     await this.handleRequest(req, res, next, async () => {
+      let filePath = req.body.fileBukti;
+      if (req.file) {
+        // multer may have stored file on disk; read buffer then use FileService
+        const file = req.file as Express.Multer.File & { path?: string };
+        let buffer: Buffer | undefined = file.buffer;
+        if (!buffer && file.path) buffer = fs.readFileSync(file.path);
+        if (buffer) {
+          filePath = await FileService.saveFile(buffer, file.originalname, 'logbook');
+          // remove multer temp file if exists
+          if (file.path && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+      }
+
       return this.createLogbookUseCase.execute({
         mahasiswaId: req.body.mahasiswaId,
         dosenId: req.body.dosenId,
         tanggal: new Date(req.body.tanggal),
         topikBahasan: req.body.topikBahasan,
         hasilBimbingan: req.body.hasilBimbingan,
-        fileBukti: req.body.fileBukti,
+        fileBukti: filePath,
       });
     });
   };
 
   uploadBerkasSidang = async (req: Request, res: Response, next: NextFunction) => {
     await this.handleRequest(req, res, next, async () => {
+      let filePath = req.body.filePath;
+      const file = req.file as Express.Multer.File & { path?: string } | undefined;
+      if (file) {
+        let buffer: Buffer | undefined = (file as any).buffer;
+        if (!buffer && file.path) buffer = fs.readFileSync(file.path);
+        if (buffer) {
+          filePath = await FileService.saveFile(buffer, file.originalname, 'berkas_sidang');
+          if (file.path && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        } else if (file.path) {
+          // fallback to disk path
+          filePath = file.path;
+        }
+      }
+
       return this.uploadBerkasSidangUseCase.execute({
         mahasiswaId: req.body.mahasiswaId,
         jadwalSidangId: req.body.jadwalSidangId,
         jenisBerkas: req.body.jenisBerkas,
-        filePath: req.file?.path || req.body.filePath,
+        filePath,
       });
     });
   };
@@ -88,13 +117,28 @@ uploadBerkasFinal = async (req: Request, res: Response, next: NextFunction) => {
   await this.handleRequest(req, res, next, async () => {
     const files = req.files as Record<string, Express.Multer.File[]>;
 
+    const resolveFile = async (f?: Express.Multer.File) => {
+      if (!f) return undefined;
+      const file = f as Express.Multer.File & { path?: string };
+      let buffer: Buffer | undefined = (file as any).buffer;
+      if (!buffer && file.path) buffer = fs.readFileSync(file.path);
+      if (buffer) {
+        const saved = await FileService.saveFile(buffer, file.originalname, 'berkas_final');
+        if (file.path && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return saved;
+      }
+      return file.path || undefined;
+    };
+
+    const fileNaskah = await resolveFile(files?.naskah?.[0]);
+    const filePengesahan = await resolveFile(files?.pengesahan?.[0]);
+    const fileBerkasLain = await resolveFile(files?.berkasLain?.[0]);
+
     return this.uploadBerkasFinalUseCase.execute({
       mahasiswaId: req.body.mahasiswaId,
-      fileNaskah: files?.naskah?.[0]?.path || req.body.fileNaskah,
-      filePengesahan:
-        files?.pengesahan?.[0]?.path || req.body.filePengesahan,
-      fileBerkasLain:
-        files?.berkasLain?.[0]?.path || req.body.fileBerkasLain,
+      fileNaskah: fileNaskah || req.body.fileNaskah,
+      filePengesahan: filePengesahan || req.body.filePengesahan,
+      fileBerkasLain: fileBerkasLain || req.body.fileBerkasLain,
     });
   });
 };

@@ -15,20 +15,60 @@ import {
   ChevronRight,
   Users,
   Database,
+  Megaphone,
+  Clock,
+  Building2,
+  ShieldCheck,
+  UserPlus,
+  TrendingUp,
+  History,
+  CheckSquare,
+  FileCheck,
+  Inbox,
 } from 'lucide-react';
 
-const menuItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['MAHASISWA', 'DOSEN_PEMBIMBING', 'DOSEN_PENGUJI', 'KAPRODI', 'ADMIN', 'ADMIN_AKADEMIK'] },
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: any;
+  roles: string[];
+}
+
+const menuItems: MenuItem[] = [
+  // Dashboard - semua role
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['MAHASISWA', 'DOSEN_PEMBIMBING', 'DOSEN_PENGUJI', 'KAPRODI', 'ADMIN', 'ADMIN_AKADEMIK', 'SEKRETARIAT', 'STAF_PRODI'] },
+
+  // Mahasiswa
   { path: '/skripsi', label: 'Skripsi', icon: GraduationCap, roles: ['MAHASISWA'] },
-  { path: '/logbook', label: 'Logbook', icon: BookOpen, roles: ['MAHASISWA', 'DOSEN_PEMBIMBING'] },
+  { path: '/berkas', label: 'Berkas Sidang', icon: FileText, roles: ['MAHASISWA'] },
+  { path: '/berkas/final', label: 'Berkas Final', icon: FileCheck, roles: ['MAHASISWA'] },
+  { path: '/jadwal', label: 'Jadwal Sidang', icon: CalendarDays, roles: ['MAHASISWA'] },
+  { path: '/peminjaman-lab', label: 'Peminjaman Lab', icon: Building2, roles: ['MAHASISWA'] },
+  { path: '/kode-etik', label: 'Kode Etik', icon: ShieldCheck, roles: ['MAHASISWA'] },
+
+  // Dosen Pembimbing
   { path: '/bimbingan', label: 'Bimbingan', icon: Users, roles: ['DOSEN_PEMBIMBING'] },
-  { path: '/jadwal', label: 'Jadwal', icon: CalendarDays, roles: ['MAHASISWA', 'DOSEN_PEMBIMBING', 'DOSEN_PENGUJI', 'ADMIN_AKADEMIK'] },
-  { path: '/penguji/jadwal', label: 'Jadwal Menguji', icon: ClipboardCheck, roles: ['DOSEN_PENGUJI'] },
-  { path: '/berkas', label: 'Berkas', icon: FileText, roles: ['MAHASISWA'] },
+  { path: '/pembimbing/bimbingan-list', label: 'Daftar Mahasiswa', icon: Inbox, roles: ['DOSEN_PEMBIMBING'] },
+  { path: '/pembimbing/logbook-validasi', label: 'Validasi Logbook', icon: CheckSquare, roles: ['DOSEN_PEMBIMBING'] },
+  { path: '/pembimbing/kelayakan', label: 'Persetujuan Kelayakan', icon: ClipboardCheck, roles: ['DOSEN_PEMBIMBING'] },
+
+  // Dosen Penguji
+  { path: '/penguji/jadwal', label: 'Jadwal Menguji', icon: CalendarDays, roles: ['DOSEN_PENGUJI'] },
+  { path: '/penguji/histori', label: 'Histori Penilaian', icon: History, roles: ['DOSEN_PENGUJI'] },
+
+  // Koordinator / Kaprodi
   { path: '/koordinator', label: 'Dashboard Koordinator', icon: BarChart3, roles: ['KAPRODI'] },
+  { path: '/koordinator/penugasan', label: 'Penugasan Pembimbing', icon: UserPlus, roles: ['KAPRODI'] },
+  { path: '/koordinator/laporan', label: 'Laporan Kinerja', icon: TrendingUp, roles: ['KAPRODI'] },
+
+  // Admin
   { path: '/admin/data-master', label: 'Data Master', icon: Database, roles: ['ADMIN', 'ADMIN_AKADEMIK'] },
+  { path: '/admin/pengumuman', label: 'Pengumuman', icon: Megaphone, roles: ['ADMIN', 'ADMIN_AKADEMIK'] },
   { path: '/admin/jadwal', label: 'Penjadwalan', icon: CalendarDays, roles: ['ADMIN', 'ADMIN_AKADEMIK'] },
-  { path: '/pengaturan', label: 'Pengaturan', icon: Settings, roles: ['ADMIN', 'ADMIN_AKADEMIK'] },
+  { path: '/admin/deadline', label: 'Deadline', icon: Clock, roles: ['ADMIN', 'ADMIN_AKADEMIK'] },
+
+  // Sekretariat
+  { path: '/sekretariat', label: 'Dashboard Sekretariat', icon: Inbox, roles: ['SEKRETARIAT'] },
 ];
 
 export default function Sidebar() {
@@ -65,15 +105,17 @@ export default function Sidebar() {
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 py-4 px-3 space-y-1">
+      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {filteredMenu.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || 
+            (item.path !== '/dashboard' && location.pathname.startsWith(item.path + '/'));
 
           return (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
+              title={collapsed ? item.label : undefined}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                 isActive
                   ? 'bg-blue-50 text-pancasila-blue border-l-4 border-pancasila-gold'
@@ -82,7 +124,7 @@ export default function Sidebar() {
             >
               <Icon size={20} className={isActive ? 'text-pancasila-blue' : 'text-gray-400 group-hover:text-gray-600'} />
               {!collapsed && (
-                <span className={`font-medium ${isActive ? 'font-semibold' : ''}`}>
+                <span className={`font-medium text-sm ${isActive ? 'font-semibold' : ''}`}>
                   {item.label}
                 </span>
               )}
@@ -91,10 +133,19 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User & Logout */}
+      {/* User Info & Logout */}
       <div className="p-4 border-t border-gray-200">
+        {!collapsed && user && (
+          <div className="mb-3 px-3">
+            <p className="text-sm font-medium text-gray-900 truncate">{user.nama}</p>
+            <p className="text-xs text-gray-500 truncate">{user.role.replace(/_/g, ' ')}</p>
+          </div>
+        )}
         <button
-          onClick={logout}
+          onClick={() => {
+            logout();
+            navigate('/login');
+          }}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition ${
             collapsed ? 'justify-center' : ''
           }`}

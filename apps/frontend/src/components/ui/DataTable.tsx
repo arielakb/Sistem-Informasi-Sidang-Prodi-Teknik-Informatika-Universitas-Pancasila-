@@ -12,6 +12,7 @@ interface DataTableProps<T extends Record<string, any>> {
   data: T[];
   loading?: boolean;
   emptyText?: string;
+  searchable?: boolean;
 }
 
 export default function DataTable<T extends Record<string, any>>({

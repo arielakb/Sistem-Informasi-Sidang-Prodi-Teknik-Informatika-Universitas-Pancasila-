@@ -31,7 +31,7 @@ export default function DataMasterPage() {
     { key: 'status', header: 'Status', render: (item: any) => (
       <Badge variant="success">{item.status}</Badge>
     )},
-    { key: 'aksi', header: 'Aksi', render: (item: any) => (
+    { key: 'aksi', header: 'Aksi', render: (_item: any) => (
       <div className="flex gap-2">
         <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
           <Edit size={16} />
@@ -48,7 +48,7 @@ export default function DataMasterPage() {
     { key: 'nama', header: 'Nama' },
     { key: 'prodi', header: 'Prodi' },
     { key: 'jabatan', header: 'Jabatan' },
-    { key: 'aksi', header: 'Aksi', render: (item: any) => (
+    { key: 'aksi', header: 'Aksi', render: (_item: any) => (
       <div className="flex gap-2">
         <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
           <Edit size={16} />

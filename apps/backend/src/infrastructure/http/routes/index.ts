@@ -8,6 +8,8 @@ import jadwalRoutes from './jadwal.routes';
 import adminRoutes from './admin.routes';
 import stafProdiRoutes from './staf-prodi.routes';
 import sekretariatRoutes from './sekretariat.routes';
+import mkSpesialRoutes from './mk-spesial.routes';
+import peerReviewRoutes from './peer-review.routes';
 
 const router: IRouter = Router();
 
@@ -20,5 +22,7 @@ router.use('/jadwal', jadwalRoutes);
 router.use('/admin', adminRoutes);
 router.use('/staf-prodi', stafProdiRoutes);
 router.use('/sekretariat', sekretariatRoutes);
+router.use('/mk-spesial', mkSpesialRoutes);
+router.use('/peer-review', peerReviewRoutes);
 
 export default router;

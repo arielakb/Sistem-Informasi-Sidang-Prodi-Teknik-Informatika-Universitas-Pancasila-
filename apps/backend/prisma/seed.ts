@@ -24,7 +24,7 @@ async function main() {
   console.log(`✅ Created Prodi: ${prodiTI.nama}, ${prodiSI.nama}`);
 
   // 2. Create Admin
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminPassword = '$2a$10$abcdefghijklmnopqrstuvwx';
   const admin = await prisma.user.upsert({
     where: { email: 'admin@univpancasila.ac.id' },
     update: {},

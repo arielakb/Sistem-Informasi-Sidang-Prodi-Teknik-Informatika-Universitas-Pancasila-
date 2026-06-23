@@ -102,6 +102,8 @@ model Mahasiswa {
   berkasFinal   BerkasFinal[]
   peminjamanLab PeminjamanLab[]
   penilaian     Penilaian[]
+  mkSpesial     MKSpesial[]
+  peerReviews   PeerReview[]
 
   @@map("mahasiswa")
 }
@@ -130,6 +132,7 @@ model Dosen {
   jadwalSebagaiPenguji2 JadwalSidang[] @relation("Penguji2Jadwal")
   jadwalSebagaiPenguji3 JadwalSidang[] @relation("Penguji3Jadwal")
   penilaian             Penilaian[]
+  peerReviewsGiven      PeerReview[]
 
   @@map("dosen")
 }
@@ -336,4 +339,32 @@ model Deadline {
   createdAt       DateTime @default(now()) @map("created_at")
 
   @@map("deadline")
+}
+
+// ============== MK SPESIAL (PESERTA MK SPESIAL) ==============
+model MKSpesial {
+  id          String   @id @default(uuid())
+  mahasiswaId String   @map("mahasiswa_id")
+  alasan      String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+
+  @@map("mk_spesial")
+}
+
+// ============== PEER REVIEW ==============
+model PeerReview {
+  id          String   @id @default(uuid())
+  reviewerId  String   @map("reviewer_id")
+  mahasiswaId String   @map("mahasiswa_id")
+  komentar    String?
+  skor        Int?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  reviewer  Dosen    @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+
+  @@map("peer_reviews")
 }

@@ -20,6 +20,8 @@ const envSchema = z.object({
   SMTP_PORT: z.string().transform(Number).optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  SMTP_SECURE: z.string().optional(),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
 });
 

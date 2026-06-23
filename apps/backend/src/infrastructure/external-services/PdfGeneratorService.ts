@@ -77,6 +77,77 @@ export class PdfGeneratorService {
     };
   }
 
+  /**
+   * Try to generate a real PDF using Puppeteer. If Puppeteer isn't installed
+   * or fails, falls back to writing the HTML file and returns its path.
+   */
+  async generateBeritaAcaraPdf(jadwal: JadwalSidangData, generatedBy: string): Promise<PdfGenerateResult> {
+    const timestamp = new Date().toISOString().split('T')[0];
+    const fileNamePdf = `BERITA_ACARA_${jadwal.mahasiswa.nim}_${timestamp}.pdf`;
+    const filePathPdf = path.join(this.outputDir, fileNamePdf);
+
+    const html = this.buildBeritaAcaraHtml(jadwal, generatedBy);
+
+    try {
+      await this.renderHtmlToPdf(html, filePathPdf);
+      console.log(`📄 [PDF] Berita Acara (PDF) generated: ${fileNamePdf}`);
+      return { filePath: filePathPdf, fileName: fileNamePdf, url: `/uploads/dokumen/${fileNamePdf}` };
+    } catch (err) {
+      // fallback to HTML file
+      const fallbackName = `BERITA_ACARA_${jadwal.mahasiswa.nim}_${timestamp}.html`;
+      const fallbackPath = path.join(this.outputDir, fallbackName);
+      fs.writeFileSync(fallbackPath, html, 'utf-8');
+      console.warn('⚠️ Puppeteer not available or failed — falling back to HTML output', err);
+      return { filePath: fallbackPath, fileName: fallbackName, url: `/uploads/dokumen/${fallbackName}` };
+    }
+  }
+
+  async generateSKPengujiPdf(jadwal: JadwalSidangData, generatedBy: string): Promise<PdfGenerateResult> {
+    const timestamp = new Date().toISOString().split('T')[0];
+    const fileNamePdf = `SK_PENGUJI_${jadwal.mahasiswa.nim}_${timestamp}.pdf`;
+    const filePathPdf = path.join(this.outputDir, fileNamePdf);
+
+    const html = this.buildSKPengujiHtml(jadwal, generatedBy);
+
+    try {
+      await this.renderHtmlToPdf(html, filePathPdf);
+      console.log(`📄 [PDF] SK Penguji (PDF) generated: ${fileNamePdf}`);
+      return { filePath: filePathPdf, fileName: fileNamePdf, url: `/uploads/dokumen/${fileNamePdf}` };
+    } catch (err) {
+      const fallbackName = `SK_PENGUJI_${jadwal.mahasiswa.nim}_${timestamp}.html`;
+      const fallbackPath = path.join(this.outputDir, fallbackName);
+      fs.writeFileSync(fallbackPath, html, 'utf-8');
+      console.warn('⚠️ Puppeteer not available or failed — falling back to HTML output', err);
+      return { filePath: fallbackPath, fileName: fallbackName, url: `/uploads/dokumen/${fallbackName}` };
+    }
+  }
+
+  private async renderHtmlToPdf(html: string, outputPath: string): Promise<void> {
+    try {
+      // Dynamic import — safe fallback if puppeteer not available
+      const puppeteer = await import('puppeteer');
+      
+      const browser = await puppeteer.default.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true,
+      });
+
+      try {
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'domcontentloaded' });
+        await page.pdf({ path: outputPath, format: 'A4', printBackground: true });
+        console.log(`✅ PDF generated successfully: ${outputPath}`);
+      } finally {
+        await browser.close();
+      }
+    } catch (err: any) {
+      if (err.code === 'MODULE_NOT_FOUND' || err.message.includes('puppeteer')) {
+        throw new Error('Puppeteer not installed or not available');
+      }
+      throw err;
+    }
+  }
+
   private formatDate(date: Date): string {
     return date.toLocaleDateString('id-ID', {
       weekday: 'long',
